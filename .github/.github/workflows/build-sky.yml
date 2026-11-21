@@ -1,0 +1,23 @@
+name: Build Stellarium for my HTML
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up the project's build environment
+        run: docker build -t stellarium-builder -f apps/web-frontend/Dockerfile.jsbuild .
+      - name: Compile the engine
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app stellarium-builder make js
+          test -s build/stellarium-web-engine.js
+          test -s build/stellarium-web-engine.wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stellarium-browser-engine
+          path: |
+            build/stellarium-web-engine.js
+            build/stellarium-web-engine.wasm
+          if-no-files-found: error
